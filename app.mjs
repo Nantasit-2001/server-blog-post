@@ -1,7 +1,7 @@
 import express from "express";
  import cors from "cors";
  import connectionPool from "./utils/db.mjs";
-import { validatePost } from "./middleware/validate.js";
+import { validatePost } from "./middleware/postValidate.js";
  const app = express();
  const port = process.env.PORT || 4001;
 
@@ -160,7 +160,7 @@ import { validatePost } from "./middleware/validate.js";
     }
   });
   
-  app.put("/posts/:postId", async (req, res) => {
+  app.put("/posts/:postId",validatePost, async (req, res) => {
 
     const postIdFromClient = req.params.postId;
     const updatedPost = { ...req.body, date: new Date() };
