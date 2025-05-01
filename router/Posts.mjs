@@ -1,6 +1,6 @@
 import { Router } from "express";
 import connectionPool from "../utils/db.mjs";
-import { validatePost } from "../middleware/postValidate.js";
+import { validatePost } from "../middleware/validatePost.js";
 const Posts = Router();
 
 Posts.post("/",validatePost,async (req, res) => {

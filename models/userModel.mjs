@@ -20,6 +20,16 @@ export const findUserByUsername = async (username) => {
     }
   };
   
+  export const findUserById = async (id) => {
+    try {
+      const res = await connectionPool.query('SELECT * FROM users WHERE id = $1', [id]);
+      return res.rows[0];
+    } catch (error) {
+      console.error("Error finding user by ID:", error);
+      throw error;
+    }
+  };
+
   export const createUser = async (name,username, email, hashedPassword,role) => {
     try {
       const res = await connectionPool.query(
@@ -32,5 +42,32 @@ export const findUserByUsername = async (username) => {
       throw error;
     }
   };
+
+  export const updateUserPasswordById = async (id, hashedPassword) => {
+    try {
+      const res = await connectionPool.query(
+        'UPDATE users SET password = $1 WHERE id = $2 RETURNING id, email',
+        [hashedPassword, id]
+      );
+      return res.rows[0]; 
+    } catch (error) {
+      console.error("Error updating user password:", error);
+      throw error;
+    }
+  };
+
+  export const updateUserProfileById = async (id,name,username,image)=>{
+    try {
+      console.log("1dwwwdwwd")
+      const res = await connectionPool.query(
+          `UPDATE users SET name = $1, username = $2, profile_pic = $3 WHERE id = $4 `,
+          [name, username, image, id],
+      );
+      console.log("dwwwdwwd")
+      return res.rows[0];
+    } catch (error) {
+      return res.status(500).json({ error: 'Failed to update profile' });
+  }
+}
 
   
