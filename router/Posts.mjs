@@ -1,6 +1,6 @@
 import { Router } from "express";
 import connectionPool from "../utils/db.mjs";
-import { validatePost } from "../middleware/postValidate.js";
+import { validatePost } from "../middleware/validatePost.js";
 const Posts = Router();
 
 Posts.post("/",validatePost,async (req, res) => {
@@ -27,15 +27,19 @@ Posts.post("/",validatePost,async (req, res) => {
 
 Posts.get("/", async (req, res) => {
     try {
-      const category = req.query.category || "";
+      let category = req.query.category || "";
+      if (category === "Highlight") {
+        category = "";
+      }
       const keyword = req.query.keyword || "";
+
       const page = Number(req.query.page) || 1;
       const limit = Number(req.query.limit) || 6;
-
+      
       const safePage = Math.max(1, page);
       const safeLimit = Math.max(1, Math.min(100, limit));
       const offset = (safePage - 1) * safeLimit;
-
+      
       let query = `
         SELECT posts.id, posts.image, categories.name AS category, posts.title, posts.description, posts.date, posts.content, statuses.status, posts.likes_count
         FROM posts
@@ -43,7 +47,7 @@ Posts.get("/", async (req, res) => {
         INNER JOIN statuses ON posts.status_id = statuses.id
       `;
       let values = [];
-  
+      
       if (category && keyword) {
         query += `
           WHERE categories.name ILIKE $1 
@@ -61,16 +65,12 @@ Posts.get("/", async (req, res) => {
         `;
         values = [`%${keyword}%`];
       }
-  
       query += ` ORDER BY posts.date DESC LIMIT $${values.length + 1} OFFSET $${
         values.length + 2
       }`;
   
       values.push(safeLimit, offset);
-
       const result = await connectionPool.query(query, values);
-  
-
 
       let countQuery = `
         SELECT COUNT(*)
@@ -94,7 +94,6 @@ Posts.get("/", async (req, res) => {
           OR posts.content ILIKE $1
         `;
       }
-  
       const countResult = await connectionPool.query(countQuery, countValues);
       const totalPosts = parseInt(countResult.rows[0].count, 10);
   
