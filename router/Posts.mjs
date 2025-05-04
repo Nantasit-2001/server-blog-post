@@ -1,6 +1,10 @@
 import { Router } from "express";
 import connectionPool from "../utils/db.mjs";
 import { validatePost } from "../middleware/validatePost.js";
+import { validateToken } from "../middleware/ValidateToken.js";
+import { updateLikes_Count } from "../models/postModel.mjs";
+import { updateLike,getLike_Count,checkLikeByUser } from "../models/likeModel.mjs";
+
 const Posts = Router();
 
 Posts.post("/",validatePost,async (req, res) => {
@@ -212,6 +216,23 @@ Posts.delete("/:postId", async (req, res) => {
     } catch {
       return res.status(500).json({
         message: `Server could not delete post because database connection`,
+      });
+    }
+  });
+
+Posts.patch("/:postId/like",validateToken, async (req, res) => {
+    const postId = req.params.postId;
+    const userId = req.user.userId 
+    try {
+      const checkLike = await checkLikeByUser(postId,userId)
+      const  liked = await updateLike(postId,userId,checkLike)
+      const likes_Count = await getLike_Count(postId)
+      await updateLikes_Count(postId,likes_Count.count)
+      return res.status(200).json(liked,likes_Count)
+    } catch (error) {
+      console.error("Toggle like error:", error);
+      return res.status(500).json({
+        message: "Server error occurred while toggling like.",
       });
     }
   });
