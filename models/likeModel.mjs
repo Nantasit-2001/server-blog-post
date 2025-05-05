@@ -23,7 +23,7 @@ export const getLike_Count = async(postId)=>{
 
 export const checkLikeByUser = async (postId,userId)=>{
     try{ 
-        const res = await connectionPool.query(    `SELECT id FROM likes WHERE post_id = $1 AND user_id = $2`,
+        const res = await connectionPool.query(`SELECT id FROM likes WHERE post_id = $1 AND user_id = $2`,
         [postId, userId]);
        return res
      }catch(e){console.log(e)

@@ -4,6 +4,7 @@ import { validatePost } from "../middleware/validatePost.js";
 import { validateToken } from "../middleware/ValidateToken.js";
 import { updateLikes_Count } from "../models/postModel.mjs";
 import { updateLike,getLike_Count,checkLikeByUser } from "../models/likeModel.mjs";
+import { getCommentByPostId,createComment } from "../models/comment.mjs";
 
 const Posts = Router();
 
@@ -181,7 +182,6 @@ Posts.put("/:postId",validatePost, async (req, res) => {
           updatedPost.date,
         ]
       );
-      console.log("result.rowCount =",result.rowCount)
       if (result.rowCount === 0) {
         return res.status(404).json({
           message: "Server could not find a requested post to update",
@@ -199,14 +199,12 @@ Posts.put("/:postId",validatePost, async (req, res) => {
 
 Posts.delete("/:postId", async (req, res) => {
     const postIdFromClient = req.params.postId;
-  console.log("postIdFromClient =",postIdFromClient)
     try {
       const result = await connectionPool.query(
         `DELETE FROM posts
          WHERE id = $1`,
         [postIdFromClient]
       );
-      console.log("result.rowCount =",result.rowCount)
       if (result.rowCount === 0) {
         return res.status(404).json({message: "Server could not find a requested post to delete"});
       }
@@ -237,4 +235,29 @@ Posts.patch("/:postId/like",validateToken, async (req, res) => {
     }
   });
 
+Posts.get("/:postId/comment", async (req, res) => {
+  const postId = req.params.postId;
+  try {
+    const comments = await getCommentByPostId(postId);
+    return res.status(200).json(comments);
+  } catch (error) {
+    console.error("Toggle like error:", error);
+    return res.status(500).json({ message: "Server error occurred while toggling like." });
+  }
+});
+
+Posts.post("/:postId/comment",validateToken,async (req,res)=>{
+  const postId = req.params.postId;
+  const userId = req.user.userId 
+  const {comment} = req.body
+  try{
+    await createComment(postId,userId,comment)
+    const comments = await getCommentByPostId(postId)
+    return res.status(200).json(comments)
+  }catch (error) {
+    console.error("Toggle like error:", error);
+    return res.status(500).json({message: "Server error occurred while toggling like.",})
+  }
+});
+  
 export default Posts;
