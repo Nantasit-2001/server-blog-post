@@ -2,8 +2,10 @@ import { Router } from "express";
 import bcrypt from 'bcryptjs';
 import { validateToken } from "../middleware/ValidateToken.js";
 import { findUserById,findUserByUsername,updateUserPasswordById,updateUserProfileById } from "../models/userModel.mjs";
-
+import { uploadImageToCloudinary,deleteImageToCloudinary } from "../models/cloudinary.mjs";
+import unpackFormData from "../middleware/unpackFormData.js";
 const Profile = Router();
+
 
 Profile.patch('/reset-password',validateToken, async (req, res) => {
     const userId = req.user.userId;
@@ -31,24 +33,36 @@ Profile.patch('/reset-password',validateToken, async (req, res) => {
   }
 });
 
-Profile.patch('/reset-profile', validateToken, async (req, res) => {
-  const { name, username, image } = req.body;
+Profile.patch('/reset-profile', validateToken,unpackFormData.single('image'), async (req, res) => {
+  const { name, username } = req.body;
+  const image = req.file;
   const userId = req.user.userId;
   try {
     const user = await findUserById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    const existingUsername = await findUserByUsername(username);
-    console.log(existingUsername,existingUsername.id)
-        if (existingUsername && existingUsername.id !== userId ) {
-          console.log(existingUsername,existingUsername.userId)
-          return res.status(400).json({ field: "username", message: "Username already in use" });
-        }
 
-    await updateUserProfileById( userId, name,username,image)
-    res.status(200).json({message:"Profile updated successfully"});
+    const existingUsername = await findUserByUsername(username);
+    if (existingUsername && existingUsername.id !== userId) {
+      return res.status(400).json({ field: "username", message: "Username already in use" });
+    }
+
+    let imageUrl = user.profile_pic;
+    if (image) {
+      if(imageUrl){
+          await deleteImageToCloudinary(imageUrl)
+      }
+      const uploadResult = await uploadImageToCloudinary(image);
+      console.log(uploadResult)
+      imageUrl = uploadResult.secure_url;
+    }
+
+    await updateUserProfileById(userId, name, username, imageUrl);
+
+    res.status(200).json({ message: "Profile updated successfully" });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
