@@ -1,3 +1,4 @@
+import Posts from "../router/posts.mjs";
 import connectionPool from "../utils/db.mjs";
 
 export const findUserByEmail = async (email) => {
@@ -58,16 +59,13 @@ export const findUserByUsername = async (username) => {
 
   export const updateUserProfileById = async (id,name,username,image)=>{
     try {
-      console.log("1dwwwdwwd")
       const res = await connectionPool.query(
           `UPDATE users SET name = $1, username = $2, profile_pic = $3 WHERE id = $4 `,
           [name, username, image, id],
       );
-      console.log("dwwwdwwd")
       return res.rows[0];
     } catch (error) {
       return res.status(500).json({ error: 'Failed to update profile' });
   }
-}
+  };
 
-  
