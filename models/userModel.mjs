@@ -69,3 +69,15 @@ export const findUserByUsername = async (username) => {
   }
   };
 
+  export const getUserProfileById = async (id) =>{
+    try {
+      const res = await connectionPool.query(
+        'SELECT * FROM users WHERE id = $1',
+        [id]
+      );
+      return res.rows[0];
+    } catch (error) {
+      console.error("Error creating user:", error);
+      throw error;
+    }
+  };

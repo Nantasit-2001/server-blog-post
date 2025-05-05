@@ -1,11 +1,20 @@
 import { Router } from "express";
 import bcrypt from 'bcryptjs';
 import { validateToken } from "../middleware/ValidateToken.js";
-import { findUserById,findUserByUsername,updateUserPasswordById,updateUserProfileById } from "../models/userModel.mjs";
+import { findUserById,findUserByUsername,updateUserPasswordById,updateUserProfileById,getUserProfileById } from "../models/userModel.mjs";
 import { uploadImageToCloudinary,deleteImageToCloudinary } from "../models/cloudinary.mjs";
 import unpackFormData from "../middleware/unpackFormData.js";
 const Profile = Router();
 
+Profile.get("/",validateToken,async(req,res)=>{
+  const userId = req.user.userId
+  try{
+  const result = await getUserProfileById(userId)
+  return res.status(200).json(result)
+}catch (error) {
+  console.error("❌ error:", error);
+  res.status(500).json({ message: "Internal server error" });}
+})
 
 Profile.patch('/reset-password',validateToken, async (req, res) => {
     const userId = req.user.userId;
