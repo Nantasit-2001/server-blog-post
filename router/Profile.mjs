@@ -29,7 +29,7 @@ Profile.patch('/reset-password',validateToken, async (req, res) => {
     }
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
-      return res.status(401).json({ field: "currentPassword", message: "Incorrect current password" });
+      return res.status(400).json({ field: "currentPassword", message: "Incorrect current password" });
     }
 
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);

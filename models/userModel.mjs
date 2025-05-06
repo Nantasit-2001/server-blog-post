@@ -32,10 +32,11 @@ export const findUserByUsername = async (username) => {
   };
 
   export const createUser = async (name,username, email, hashedPassword,role) => {
+    const pic = "https://placehold.co/100x100?text=Profile"
     try {
       const res = await connectionPool.query(
-        'INSERT INTO users (name,username, email, password,role) VALUES ($1, $2, $3,$4,$5) RETURNING *',
-        [name,username, email, hashedPassword,role]
+        'INSERT INTO users (name,username, email, password,role,profile_pic) VALUES ($1, $2, $3,$4,$5,$6) RETURNING *',
+        [name,username, email, hashedPassword,role,pic]
       );
       return res.rows[0];
     } catch (error) {
