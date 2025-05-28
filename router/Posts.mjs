@@ -5,30 +5,36 @@ import { validateToken } from "../middleware/ValidateToken.js";
 import { updateLikes_Count } from "../models/postModel.mjs";
 import { updateLike,getLike_Count,checkLikeByUser } from "../models/likeModel.mjs";
 import { getCommentByPostId,createComment } from "../models/comment.mjs";
+import { createNotifications } from "../models/notifications.mjs";
 
 const Posts = Router();
 
-Posts.post("/",validatePost,async (req, res) => {
-    const newPost = req.body;
-    try {
-      const query = `insert into posts (title, image, category_id, description, content, status_id)
-      values ($1, $2, $3, $4, $5, $6)`;
-      const values = [
-        newPost.title,
-        newPost.image,
-        newPost.category_id,
-        newPost.description,
-        newPost.content,
-        newPost.status_id,
-      ];
-      await connectionPool.query(query, values);
-      return res.status(201).json({ message: "Created post successfully" });
-    } catch {
-      return res.status(500).json({
-        message: `Server could not create post because database connection`,
-      });
-    }    
-  });
+// Admin Post
+// Posts.post("/",validatePost,async (req, res) => {
+//     const newPost = req.body;
+//     try {
+//       const query = `insert into posts (title, image, category_id, description, content, status_id)
+//       values ($1, $2, $3, $4, $5, $6)`;
+//       const values = [
+//         newPost.title,
+//         newPost.image,
+//         newPost.category_id,
+//         newPost.description,
+//         newPost.content,
+//         newPost.status_id,
+//       ];
+//        await connectionPool.query(query, values);
+
+//       createNotifications({type: "admin_posted", senderId, postId, commentId: null});
+//       createNotifications({type: "user_commented",senderId,postId,commentId});
+
+//       return res.status(201).json({ message: "Created post successfully" });
+//     } catch {
+//       return res.status(500).json({
+//         message: `Server could not create post because database connection`,
+//       });
+//     }    
+//   });
 
 Posts.get("/", async (req, res) => {
     try {
@@ -251,8 +257,14 @@ Posts.post("/:postId/comment",validateToken,async (req,res)=>{
   const userId = req.user.userId 
   const {comment} = req.body
   try{
-    await createComment(postId,userId,comment)
+    const newComment = await createComment(postId,userId,comment)
     const comments = await getCommentByPostId(postId)
+    const newCommentId = newComment[0].id
+    // TODO ทำความเข้าใจฝั่ง Admin
+    // TODO ทำ api ของ Admin
+    // TODO TEST vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+    createNotifications("other_user_commented",userId,postId,newCommentId);
+    
     return res.status(200).json(comments)
   }catch (error) {
     console.error("Toggle like error:", error);

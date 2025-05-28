@@ -8,9 +8,9 @@ cloudinary.v2.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export const uploadImageToCloudinary = (image) => {
+export const uploadImageToCloudinary = (image,folderImage="your-folder") => {
   return new Promise((resolve, reject) => {
-    const stream = cloudinary.v2.uploader.upload_stream({ folder: 'your-folder' }, (error, result) => {
+    const stream = cloudinary.v2.uploader.upload_stream({ folder: folderImage }, (error, result) => {
       if (error) return reject(error);
       resolve(result); 
     });
@@ -23,7 +23,7 @@ export const uploadImageToCloudinary = (image) => {
 
 export const deleteImageToCloudinary = async(imageUrl) =>{
     const publicId = extractPublicIdFromUrl(imageUrl); 
-      try {
+    try {
         await uploader.destroy(publicId); 
         console.log(`Successfully deleted old image: ${publicId}`);
       } catch (deleteError) {

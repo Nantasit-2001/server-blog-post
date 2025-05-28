@@ -3,7 +3,10 @@ import bcrypt from 'bcryptjs';
 import { validateToken } from "../middleware/ValidateToken.js";
 import { findUserById,findUserByUsername,updateUserPasswordById,updateUserProfileById,getUserProfileById } from "../models/userModel.mjs";
 import { uploadImageToCloudinary,deleteImageToCloudinary } from "../models/cloudinary.mjs";
+import { getBioByUserId,upsertBioByUserId } from "../models/bioModel.mjs";
 import unpackFormData from "../middleware/unpackFormData.js";
+import { profile } from "console";
+import { text } from "stream/consumers";
 const Profile = Router();
 
 Profile.get("/",validateToken,async(req,res)=>{
@@ -75,5 +78,29 @@ Profile.patch('/reset-profile', validateToken,unpackFormData.single('image'), as
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+
+Profile.get('/bio',validateToken, async (req,res)=>{
+  const userId = req.user.userId
+  try{
+    const getBio = await getBioByUserId(userId)
+    return res.status(200).json(getBio);
+}catch (error) {
+  console.error("❌ error:", error);
+  res.status(500).json({ message: "Internal server error" });
+}
+})
+
+Profile.post('/bio',validateToken, async (req,res)=>{
+  const userId = req.user.userId
+  const bio_text = req.body
+  try{
+    const updatedBio = await upsertBioByUserId(userId,bio_text.text)
+    return res.status(200).json(updatedBio);
+}catch (error) {
+  console.error("❌ error:", error);
+  res.status(500).json({ message: "Internal server error" });
+}
+})
 
   export default Profile;
