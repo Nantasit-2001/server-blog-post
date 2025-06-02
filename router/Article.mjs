@@ -2,6 +2,8 @@ import { Router } from "express";
 import { getArticleInfo,getArticleById,deleteArticle,putArticle ,postArticle,getImageUrlByPostId} from "../models/articleModel.mjs";
 import unpackFormData from "../middleware/unpackFormData.js";
 import { deleteImageToCloudinary,uploadImageToCloudinary } from "../models/cloudinary.mjs";
+import { createNotifications } from "../models/notifications.mjs";
+import { validateToken } from "../middleware/ValidateToken.js";
 const Article = Router();
 
 Article.get('/', async (req,res)=>{
@@ -26,11 +28,12 @@ Article.get('/:postId', async (req,res)=>{
 }
 })
 
-Article.put('/:postId', unpackFormData.single('image'), async (req, res) => {
+Article.put('/:postId', unpackFormData.single('image'),validateToken, async (req, res) => {
   try {
     let { title, description, content, category_id, status, imageUrl } = req.body;
     const image = req.file;
     const { postId } = req.params;
+    const userId = req.user.userId 
     if (image) {
       // หากมี image ใหม่ และมี imageUrl เดิม → ลบภาพเก่าก่อน
       if (imageUrl && imageUrl.includes("res.cloudinary.com")) {
@@ -45,6 +48,7 @@ Article.put('/:postId', unpackFormData.single('image'), async (req, res) => {
       imageUrl = uploadResult.secure_url;
     }
      const isUpdate = await putArticle(postId,title,description,content,category_id,status,imageUrl);
+     if(status==="publish"){createNotifications("admin_posted", userId, isUpdate.id)}
      return res.status(200).json(isUpdate);
   }catch (error) {
     console.error("❌ error:", error);
@@ -53,16 +57,16 @@ Article.put('/:postId', unpackFormData.single('image'), async (req, res) => {
 })
 
 
-Article.post('/', unpackFormData.single('image'), async (req, res) => {
+Article.post('/', unpackFormData.single('image'),validateToken, async (req, res) => {
   try {
     const { title, description, content, category_id, status} = req.body;
     const image = req.file;
-    
+    const userId = req.user.userId 
     const uploadResult = await uploadImageToCloudinary(image, "article-images");
-    console.log("✅ uploadResult:", uploadResult);
-    
+
     const imageUrl = uploadResult.secure_url;
     const isPosted = await postArticle(title,description,content,category_id,status,imageUrl);
+    if(status==="publish"){createNotifications("admin_posted", userId, isPosted.id)}
      return res.status(200).json(isPosted);
   }catch (error) {
     console.error("❌ error:", error);

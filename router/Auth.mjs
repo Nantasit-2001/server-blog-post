@@ -46,4 +46,21 @@ AuthRouter.post("/login", async (req, res) => {
   }
 });
 
+AuthRouter.post("/loginAdmin", async (req, res) => { 
+  const { email, password } = req.body;
+  try {
+    const user = await findUserByEmail(email);
+    if (!user) return res.status(400).json({ message: 'Invalid email or password' });
+    if (user.role !== "admin") return res.status(403).json({ message: 'Access denied: Admins only' });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ message: 'Invalid email or password' });
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.status(200).json({ token, });
+  } catch (error) {
+    console.error("Login error:", error); // Log error for debugging
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 export default AuthRouter; 
