@@ -1,9 +1,12 @@
+import dotenv from "dotenv";
+dotenv.config();
 import * as pg from "pg";
  const { Pool } = pg.default;
- 
  const connectionPool = new Pool({
-   connectionString:
-     "postgresql://postgres:postgres@localhost:5432/blog-post",
+   connectionString:process.env.DATABASE_URL,
+    ssl: {
+    rejectUnauthorized: false,
+  },
  });
  
  export default connectionPool;
