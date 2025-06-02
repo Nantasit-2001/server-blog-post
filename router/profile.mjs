@@ -1,6 +1,6 @@
 import { Router } from "express";
 import bcrypt from 'bcryptjs';
-import { validateToken } from "../middleware/ValidateToken.js";
+import { validateToken } from "../middleware/validateToken.js";
 import { findUserById,findUserByUsername,updateUserPasswordById,updateUserProfileById,getUserProfileById } from "../models/userModel.mjs";
 import { uploadImageToCloudinary,deleteImageToCloudinary } from "../models/cloudinary.mjs";
 import { getBioByUserId,upsertBioByUserId } from "../models/bioModel.mjs";
