@@ -3,7 +3,7 @@ import { getArticleInfo,getArticleById,deleteArticle,putArticle ,postArticle,get
 import unpackFormData from "../middleware/unpackFormData.js";
 import { deleteImageToCloudinary,uploadImageToCloudinary } from "../models/cloudinary.mjs";
 import { createNotifications } from "../models/notifications.mjs";
-import { validateToken } from "../middleware/ValidateToken.js";
+import { validateToken } from "../middleware/validateToken.js";
 const Article = Router();
 
 Article.get('/', async (req,res)=>{
