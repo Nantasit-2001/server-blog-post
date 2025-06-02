@@ -10,7 +10,6 @@ export const getCommentByPostId = async (postId) => {
             ORDER BY comments.created_at ASC`,
             [postId]
         );    
-        console.log("✅✅✅✅✅✅✅",res.rows)
         return res.rows
     } catch (err) {
         console.error(err);

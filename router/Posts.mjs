@@ -11,110 +11,139 @@ import { getUserProfileById } from "../models/userModel.mjs";
 const Posts = Router();
 
 Posts.get("/", async (req, res) => {
-    try {
-      let category = req.query.category || "";
-      if (category === "Highlight") {
-        category = "";
-      }
-      const keyword = req.query.keyword || "";
-
-      const page = Number(req.query.page) || 1;
-      const limit = Number(req.query.limit) || 6;
-      
-      const safePage = Math.max(1, page);
-      const safeLimit = Math.max(1, Math.min(100, limit));
-      const offset = (safePage - 1) * safeLimit;
-      
-      let query = `
-        SELECT posts.id, posts.image, categories.name AS category, posts.title, posts.description, posts.date, posts.content, statuses.status, posts.likes_count
-        FROM posts
-        INNER JOIN categories ON posts.category_id = categories.id
-        INNER JOIN statuses ON posts.status_id = statuses.id
-      `;
-      let values = [];
-      
-      if (category && keyword) {
-        query += `
-          WHERE categories.name ILIKE $1 
-          AND (posts.title ILIKE $2 OR posts.description ILIKE $2 OR posts.content ILIKE $2)
-        `;
-        values = [`%${category}%`, `%${keyword}%`];
-      } else if (category) {
-        query += " WHERE categories.name ILIKE $1";
-        values = [`%${category}%`];
-      } else if (keyword) {
-        query += `
-          WHERE posts.title ILIKE $1 
-          OR posts.description ILIKE $1 
-          OR posts.content ILIKE $1
-        `;
-        values = [`%${keyword}%`];
-      }
-      query += ` ORDER BY posts.date DESC LIMIT $${values.length + 1} OFFSET $${
-        values.length + 2
-      }`;
-  
-      values.push(safeLimit, offset);
-      const result = await connectionPool.query(query, values);
-
-      let countQuery = `
-        SELECT COUNT(*)
-        FROM posts
-        INNER JOIN categories ON posts.category_id = categories.id
-        INNER JOIN statuses ON posts.status_id = statuses.id
-      `;
-      let countValues = values.slice(0, -2);
-  
-      if (category && keyword) {
-        countQuery += `
-          WHERE categories.name ILIKE $1 
-          AND (posts.title ILIKE $2 OR posts.description ILIKE $2 OR posts.content ILIKE $2)
-        `;
-      } else if (category) {
-        countQuery += " WHERE categories.name ILIKE $1";
-      } else if (keyword) {
-        countQuery += `
-          WHERE posts.title ILIKE $1 
-          OR posts.description ILIKE $1 
-          OR posts.content ILIKE $1
-        `;
-      }
-      const countResult = await connectionPool.query(countQuery, countValues);
-      const totalPosts = parseInt(countResult.rows[0].count, 10);
-  
-      const results = {
-        totalPosts,
-        totalPages: Math.ceil(totalPosts / safeLimit),
-        currentPage: safePage,
-        limit: safeLimit,
-        posts: result.rows,
-      };
-      if (offset + safeLimit < totalPosts) {
-        results.nextPage = safePage + 1;
-      }
-      if (offset > 0) {
-        results.previousPage = safePage - 1;
-      }
-      return res.status(200).json(results);
-    } catch {
-      return res.status(500).json({
-        message: "Server could not read post because database connection",
-      });
+  try {
+    let category = req.query.category || "";
+    if (category === "Highlight") {
+      category = "";
     }
-  });
+    const keyword = req.query.keyword || "";
+
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 6;
+
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.max(1, Math.min(100, limit));
+    const offset = (safePage - 1) * safeLimit;
+
+let query = `
+  SELECT 
+    posts.id, posts.image, categories.name AS category, posts.title, posts.description, 
+    posts.date, posts.content, statuses.status, posts.likes_count,
+    u.name AS author_name, u.profile_pic AS author_profile_pic
+  FROM posts
+  INNER JOIN categories ON posts.category_id = categories.id
+  INNER JOIN statuses ON posts.status_id = statuses.id
+  LEFT JOIN (
+    SELECT name, profile_pic
+    FROM users
+    WHERE role = 'admin'
+    LIMIT 1
+  ) u ON true
+  WHERE statuses.status = 'publish'
+  `;
+
+
+    let values = [];
+
+    if (category && keyword) {
+      query += `
+        WHERE categories.name ILIKE $1 
+        AND (posts.title ILIKE $2 OR posts.description ILIKE $2 OR posts.content ILIKE $2)
+      `;
+      values = [`%${category}%`, `%${keyword}%`];
+    } else if (category) {
+      query += ` WHERE categories.name ILIKE $1`;
+      values = [`%${category}%`];
+    } else if (keyword) {
+      query += `
+        WHERE posts.title ILIKE $1 
+        OR posts.description ILIKE $1 
+        OR posts.content ILIKE $1
+      `;
+      values = [`%${keyword}%`];
+    }
+
+    query += ` ORDER BY posts.date DESC LIMIT $${values.length + 1} OFFSET $${values.length + 2}`;
+
+    values.push(safeLimit, offset);
+    const result = await connectionPool.query(query, values);
+
+    // Count query
+    let countQuery = `
+      SELECT COUNT(*)
+      FROM posts
+      INNER JOIN categories ON posts.category_id = categories.id
+      INNER JOIN statuses ON posts.status_id = statuses.id
+    `;
+
+    let countValues = values.slice(0, -2);
+
+    if (category && keyword) {
+      countQuery += `
+        WHERE categories.name ILIKE $1 
+        AND (posts.title ILIKE $2 OR posts.description ILIKE $2 OR posts.content ILIKE $2)
+      `;
+    } else if (category) {
+      countQuery += ` WHERE categories.name ILIKE $1`;
+    } else if (keyword) {
+      countQuery += `
+        WHERE posts.title ILIKE $1 
+        OR posts.description ILIKE $1 
+        OR posts.content ILIKE $1
+      `;
+    }
+
+    const countResult = await connectionPool.query(countQuery, countValues);
+    const totalPosts = parseInt(countResult.rows[0].count, 10);
+
+    const results = {
+      totalPosts,
+      totalPages: Math.ceil(totalPosts / safeLimit),
+      currentPage: safePage,
+      limit: safeLimit,
+      posts: result.rows,
+    };
+
+    if (offset + safeLimit < totalPosts) {
+      results.nextPage = safePage + 1;
+    }
+    if (offset > 0) {
+      results.previousPage = safePage - 1;
+    }
+
+    return res.status(200).json(results);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      message: "Server could not read post because database connection",
+    });
+  }
+});
 
 Posts.get("/:postId", async (req, res) => {
     const postIdFromClient = req.params.postId;
   
     try {
-      const results = await connectionPool.query(
-        `
-        SELECT posts.id, posts.image, categories.name AS category, posts.title, posts.description, posts.date, posts.content, statuses.status, posts.likes_count
-        FROM posts
-        INNER JOIN categories ON posts.category_id = categories.id
-        INNER JOIN statuses ON posts.status_id = statuses.id
-        WHERE posts.id = $1
-        `,
+      const results = await connectionPool.query(`
+SELECT 
+  posts.id, posts.image, categories.name AS category, posts.title, posts.description, posts.date, posts.content, statuses.status, posts.likes_count,
+  u.name AS author_name, u.profile_pic AS author_profile_pic, u.bio
+FROM posts
+INNER JOIN categories ON posts.category_id = categories.id
+INNER JOIN statuses ON posts.status_id = statuses.id
+LEFT JOIN (
+  SELECT 
+    users.id,
+    users.name, 
+    users.profile_pic,
+    bio.bio
+  FROM users
+  LEFT JOIN bio ON bio.user_id = users.id
+  WHERE users.role = 'admin'
+  LIMIT 1
+) u ON true
+WHERE posts.id = $1 AND statuses.status = 'publish'
+`,
         [postIdFromClient]
       );
   

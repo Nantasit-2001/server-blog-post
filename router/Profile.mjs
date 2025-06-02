@@ -5,8 +5,6 @@ import { findUserById,findUserByUsername,updateUserPasswordById,updateUserProfil
 import { uploadImageToCloudinary,deleteImageToCloudinary } from "../models/cloudinary.mjs";
 import { getBioByUserId,upsertBioByUserId } from "../models/bioModel.mjs";
 import unpackFormData from "../middleware/unpackFormData.js";
-import { profile } from "console";
-import { text } from "stream/consumers";
 const Profile = Router();
 
 Profile.get("/",validateToken,async(req,res)=>{
@@ -66,7 +64,6 @@ Profile.patch('/reset-profile', validateToken,unpackFormData.single('image'), as
           await deleteImageToCloudinary(imageUrl)
       }
       const uploadResult = await uploadImageToCloudinary(image);
-      console.log(uploadResult)
       imageUrl = uploadResult.secure_url;
     }
 
