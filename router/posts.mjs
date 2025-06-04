@@ -40,32 +40,30 @@ let query = `
     LIMIT 1
   ) u ON true
   WHERE statuses.status = 'publish'
+`;
+
+let values = [];
+
+if (category && keyword) {
+  query += `
+    AND categories.name ILIKE $1 
+    AND (posts.title ILIKE $2 OR posts.description ILIKE $2 OR posts.content ILIKE $2)
   `;
+  values = [`%${category}%`, `%${keyword}%`];
+} else if (category) {
+  query += ` AND categories.name ILIKE $1`;
+  values = [`%${category}%`];
+} else if (keyword) {
+  query += `
+    AND (posts.title ILIKE $1 
+         OR posts.description ILIKE $1 
+         OR posts.content ILIKE $1)
+  `;
+  values = [`%${keyword}%`];
+}
 
-
-    let values = [];
-
-    if (category && keyword) {
-      query += `
-        WHERE categories.name ILIKE $1 
-        AND (posts.title ILIKE $2 OR posts.description ILIKE $2 OR posts.content ILIKE $2)
-      `;
-      values = [`%${category}%`, `%${keyword}%`];
-    } else if (category) {
-      query += ` WHERE categories.name ILIKE $1`;
-      values = [`%${category}%`];
-    } else if (keyword) {
-      query += `
-        WHERE posts.title ILIKE $1 
-        OR posts.description ILIKE $1 
-        OR posts.content ILIKE $1
-      `;
-      values = [`%${keyword}%`];
-    }
-
-    query += ` ORDER BY posts.date DESC LIMIT $${values.length + 1} OFFSET $${values.length + 2}`;
-
-    values.push(safeLimit, offset);
+query += ` ORDER BY posts.date DESC LIMIT $${values.length + 1} OFFSET $${values.length + 2}`;
+values.push(safeLimit, offset);
     const result = await connectionPool.query(query, values);
 
     // Count query
