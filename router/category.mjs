@@ -15,7 +15,6 @@ Categories.get('/', async (req,res)=>{
 
 Categories.post('/', async (req,res)=>{
     const {category} = req.body
-    console.log(category)
     try{
     const newCategory = await postCategory(category)
     return res.status(200).json(newCategory);
@@ -28,7 +27,6 @@ Categories.post('/', async (req,res)=>{
 Categories.put('/', async (req,res)=>{
     const {oldCategory,newCategory} = req.body
     try{
-      console.log(oldCategory,newCategory)
     const updateCategory = await putCategory(oldCategory,newCategory)
     return res.status(200).json(updateCategory);
 }catch (error) {
@@ -39,7 +37,6 @@ Categories.put('/', async (req,res)=>{
 
 Categories.delete('/', async (req, res) => {
   const category = req.query.category; // ✅ รับจาก query string เช่น ?category=food
-  console.log(category);
   try {
     const result = await deleteCategory(category); // สมมุติใช้ฟังก์ชัน deleteCategory()
     return res.status(200).json(result);
