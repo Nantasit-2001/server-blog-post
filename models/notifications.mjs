@@ -2,9 +2,8 @@ import connectionPool from "../utils/db.mjs";
 
 export async function createNotifications( type, senderId, postId, commentId = null ) {
   try {
-    let receiverQuery = ""; // คนที่จะเป็น คนรับ
+    let receiverQuery = ""; 
     let queryParams = [];
-    // เลือก query ตามประเภท
     switch (type) {
       case "user_commented":
         receiverQuery = `SELECT id FROM users WHERE role = 'admin'`;
@@ -89,13 +88,14 @@ WHERE n.is_read = false AND n.type = 'user_commented'
   }
 }
 
-export async function getNotification(){
-  try{
+export async function getNotification(userid){
+  try {
     const notification = await connectionPool.query(
-    `SELECT sender_user_id, post_id, is_read, type, created_at,id
-      FROM notifications
-      WHERE is_read = false AND type != 'user_commented'`
-    )
+      `SELECT sender_user_id, post_id, is_read, type, created_at, id
+       FROM notifications
+       WHERE is_read = false AND type != 'user_commented' AND receiver_user_id = $1`,
+      [userid]
+    );
     return notification.rows
   }catch(e){
     console.log(e)
