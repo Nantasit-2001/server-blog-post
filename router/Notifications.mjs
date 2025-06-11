@@ -25,9 +25,10 @@ Notifications.get("/admin", async (req, res) => {
     }
   });
 
-Notifications.get("/user", async (req, res) => {
+Notifications.get("/user/:userid", async (req, res) => {
     try {
-      const notification = await getNotification()
+      const {userid} = req.params
+      const notification = await getNotification(userid)
       const notificationsWithProfile = await Promise.all(
       notification.map(async (notif) => {
       const profile = await getUserProfileById(notif.sender_user_id);

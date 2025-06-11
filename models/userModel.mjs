@@ -1,4 +1,3 @@
-import Posts from "../router/posts.mjs";
 import connectionPool from "../utils/db.mjs";
 
 export const findUserByEmail = async (email) => {
